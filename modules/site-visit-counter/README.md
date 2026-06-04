@@ -41,3 +41,27 @@ module "site_visit_counter" {
 ```
 
 Use `module.site_visit_counter.counter_url` in the site JavaScript.
+
+## How it works
+
+The module creates a small serverless counter API:
+
+```text
+Visitor opens site
+  -> browser calls the counter URL
+  -> API Gateway receives GET /count
+  -> API Gateway invokes Lambda
+  -> Lambda atomically increments DynamoDB
+  -> Lambda returns { "count": 123 }
+  -> browser displays the visit count
+```
+
+The DynamoDB table stores the counter value. It uses `PAY_PER_REQUEST` billing, so there is no fixed capacity to manage. The table key is `counter_id`, which lets the same table shape support one or more counters. By default, the module uses `site`.
+
+The Lambda function is packaged from `files/lambda.py`. On each request, it runs a DynamoDB `UpdateItem` call with `ADD visits :increment`, which makes the increment atomic even when multiple visitors load the site at the same time.
+
+API Gateway exposes the public HTTP endpoint and routes `GET /count` to the Lambda function. The `counter_url` output is the full browser-callable endpoint to place in the static site configuration.
+
+IAM resources give the Lambda only the permissions it needs: updating the DynamoDB table and writing CloudWatch logs. The CloudWatch log group uses `log_retention_days` so logs do not build up indefinitely.
+
+This endpoint is public by design. `allowed_origins` controls browser CORS access, but it is not authentication. Anyone with the URL can call it, so this module is suitable for low-risk counters rather than sensitive analytics.
