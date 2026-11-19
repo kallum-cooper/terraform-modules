@@ -30,3 +30,9 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "directory_indexes_enabled" {
+  description = "Rewrite directory URLs to index.html for static generators such as Hugo."
+  type        = bool
+  default     = false
+}
