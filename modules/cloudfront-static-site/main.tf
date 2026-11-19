@@ -6,6 +6,15 @@ resource "aws_cloudfront_origin_access_control" "this" {
   signing_protocol                  = "sigv4"
 }
 
+resource "aws_cloudfront_function" "directory_index" {
+  count   = var.directory_indexes_enabled ? 1 : 0
+  name    = "${var.name}-directory-index"
+  runtime = "cloudfront-js-2.0"
+  comment = "Resolve static site directory URLs to index.html"
+  publish = true
+  code    = file("${path.module}/files/directory-index.js")
+}
+
 resource "aws_cloudfront_distribution" "this" {
   enabled             = true
   is_ipv6_enabled     = true
@@ -25,6 +34,14 @@ resource "aws_cloudfront_distribution" "this" {
 
     allowed_methods = ["GET", "HEAD", "OPTIONS"]
     cached_methods  = ["GET", "HEAD", "OPTIONS"]
+
+    dynamic "function_association" {
+      for_each = var.directory_indexes_enabled ? [1] : []
+      content {
+        event_type   = "viewer-request"
+        function_arn = aws_cloudfront_function.directory_index[0].arn
+      }
+    }
 
     forwarded_values {
       query_string = false

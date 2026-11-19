@@ -8,6 +8,9 @@ Creates a CloudFront distribution for a static site with an S3 origin using Orig
 - `aliases`
 - `default_root_object`
 - `tags`
+- `directory_indexes_enabled` (default `false`) — optionally rewrite directory URLs to `index.html` using a viewer-request CloudFront Function. This supports Hugo's nested pages with a private S3 origin.
+
+Run URL rewrite checks with `node --test modules/cloudfront-static-site/tests/directory-index.test.cjs` from the repository root.
 
 ## Outputs
 - `distribution_id`
